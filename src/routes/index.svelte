@@ -1,46 +1,22 @@
-<style>
-	h1, figure, p {
-		text-align: center;
-		margin: 0 auto;
-	}
-
-	h1 {
-		font-size: 2.8em;
-		text-transform: uppercase;
-		font-weight: 700;
-		margin: 0 0 0.5em 0;
-	}
-
-	figure {
-		margin: 0 0 1em 0;
-	}
-
-	img {
-		width: 100%;
-		max-width: 400px;
-		margin: 0 0 1em 0;
-	}
-
-	p {
-		margin: 1em auto;
-	}
-
-	@media (min-width: 480px) {
-		h1 {
-			font-size: 4em;
-		}
-	}
-</style>
+<script>
+    import Button from "smelte/src/components/Button";
+</script>
 
 <svelte:head>
-	<title>Sapper project template</title>
+    <title>Sapper project template</title>
 </svelte:head>
 
-<h1>Great success!</h1>
+<h1 class="text-3xl font-bold text-center">Great success!</h1>
 
-<figure>
-	<img alt='Success Kid' src='successkid.jpg'>
-	<figcaption>Have fun with Sapper!</figcaption>
-</figure>
+<div class="flex justify-center">
+    <figure class="mt-3 mx-auto">
+        <img class="max-w-xl" alt="Success Kid" src="successkid.jpg" />
+        <figcaption class="mt-2 text-center">Have fun with Sapper!</figcaption>
+    </figure>
+</div>
 
-<p><strong>Try editing this file (src/routes/index.svelte) to test live reloading.</strong></p>
+<p class="mt-4 text-center">
+    <strong>
+        Try editing this file (src/routes/index.svelte) to test live reloading.
+    </strong>
+</p>
