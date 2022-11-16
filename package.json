@@ -1,0 +1,30 @@
+{
+    "name": "@example/basics",
+    "type": "module",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+        "dev": "astro dev",
+        "start": "astro dev",
+        "build": "astro build",
+        "preview": "astro preview",
+        "astro": "astro",
+        "prettify": "prettier --write --plugin-search-dir=. ."
+    },
+    "dependencies": {
+        "@astrojs/alpinejs": "^0.1.2",
+        "@astrojs/image": "^0.11.4",
+        "@astrojs/partytown": "^1.0.1",
+        "@astrojs/prefetch": "^0.1.1",
+        "@astrojs/prism": "^1.0.2",
+        "@astrojs/sitemap": "^1.0.0",
+        "@types/alpinejs": "^3.0.0",
+        "alpinejs": "^3.0.0",
+        "astro": "^1.6.8",
+        "prefetch": "^0.2.1"
+    },
+    "devDependencies": {
+        "prettier": "^2.7.1",
+        "prettier-plugin-astro": "^0.7.0"
+    }
+}

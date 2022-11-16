@@ -1,0 +1,19 @@
+import { defineConfig } from "astro/config";
+
+import alpinejs from "@astrojs/alpinejs";
+import image from "@astrojs/image";
+import partytown from "@astrojs/partytown";
+import prefetch from "@astrojs/prefetch";
+import sitemap from "@astrojs/sitemap";
+import tailwind from "@astrojs/tailwind";
+
+export default defineConfig({
+    integrations: [
+        alpinejs(),
+        image(),
+        partytown(),
+        prefetch(),
+        sitemap(),
+        tailwind(),
+    ],
+});
