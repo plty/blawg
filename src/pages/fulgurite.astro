@@ -1,7 +1,8 @@
 ---
 import _ from "lodash";
 
-import Fulgurite from "../components/Fulgurite.jsx";
+import { FulguriteIsland } from "../components/Fulgurite.jsx";
+import TopLevelProvider from "../components/TopLevelProvider.jsx";
 import Layout from "../layouts/Layout.astro";
 ---
 
@@ -9,6 +10,6 @@ import Layout from "../layouts/Layout.astro";
     <main class="container mx-auto px-4 pt-6">
         <h1 class="text-4xl font-bold">Fulgurite</h1>
         when god-"bolt" meet "sand"-pack
-        <Fulgurite client:load />
+        <FulguriteIsland client:load />
     </main>
 </Layout>
