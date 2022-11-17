@@ -5,9 +5,11 @@ import partytown from "@astrojs/partytown";
 import prefetch from "@astrojs/prefetch";
 import sitemap from "@astrojs/sitemap";
 import tailwind from "@astrojs/tailwind";
+import react from "@astrojs/react";
 
+// https://astro.build/config
 export default defineConfig({
-    site: 'https://bigpp.dev',
+    site: "https://bigpp.dev",
     integrations: [
         alpinejs(),
         image(),
@@ -15,6 +17,7 @@ export default defineConfig({
         prefetch(),
         sitemap({}),
         tailwind(),
+        react(),
     ],
     markdown: {
         shikiConfig: {
