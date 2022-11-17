@@ -1,11 +1,12 @@
-import { defineConfig } from "astro/config";
+import react from "@astrojs/react";
+
 import alpinejs from "@astrojs/alpinejs";
 import image from "@astrojs/image";
 import partytown from "@astrojs/partytown";
 import prefetch from "@astrojs/prefetch";
 import sitemap from "@astrojs/sitemap";
 import tailwind from "@astrojs/tailwind";
-import react from "@astrojs/react";
+import { defineConfig } from "astro/config";
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,7 +14,7 @@ export default defineConfig({
     integrations: [
         alpinejs(),
         image(),
-        partytown(),
+        // partytown(),
         prefetch(),
         sitemap({}),
         tailwind(),
