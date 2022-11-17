@@ -1,16 +1,22 @@
-import { createContext, useContext, useEffect, useRef } from "react";
+import { useState } from "react";
 
 import { cpp } from "@codemirror/lang-cpp";
-import { EditorState } from "@codemirror/state";
+import { StreamLanguage } from "@codemirror/language";
+import { gas } from "@codemirror/legacy-modes/mode/gas";
 import { RangeSetBuilder } from "@codemirror/state";
-import { Facet } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 import { Decoration } from "@codemirror/view";
 import { ViewPlugin } from "@codemirror/view";
-import { EditorView, basicSetup } from "codemirror";
-import { StreamLanguage } from "@codemirror/language"
-import { gas } from "@codemirror/legacy-modes/mode/gas"
+import CodeMirror from "@uiw/react-codemirror";
+import axios from "axios";
+import _ from "lodash";
+import { QueryClient, QueryClientProvider, useQuery } from "react-query";
+import { useDebounce } from "rooks";
+import { useLocalstorageState } from "rooks";
 
 import { dracula } from "./editor/theme";
+
+const queryClient = new QueryClient();
 
 const pyCode = `\
 def f(x):
@@ -24,146 +30,180 @@ const cppCode = `\
 #include<iostream>
 
 int f(int x) {
-    int v = x * x * x;
-    int w = v + v * v;
-    return w;
+    return x < 2 ? x : f(x - 1) + f(x - 2);
 }
+
+int g(int x) {
+    return x == 0 ? 1 : x * g(x - 1);
+}
+
 int main()
 {
-    std::cout << f(20);
+    // std::cout << f(8) << " " << g(5) << std::endl;
 }
 `;
 
-const asmCode = `
-f(int):                                  # @f(int)
-        movl    %edi, %ecx
-        imull   %edi, %ecx
-        imull   %edi, %ecx
-        movl    %ecx, %eax
-        imull   %ecx, %eax
-        addl    %ecx, %eax
-        retq
-main:                                   # @main
-        pushq   %rax
-        movq    std::cout@GOTPCREL(%rip), %rdi
-        movl    $64008000, %esi                 # imm = 0x3D0AF40
-        callq   std::basic_ostream<char, std::char_traits<char> >::operator<<(int)@PLT
-        xorl    %eax, %eax
-        popq    %rcx
-        retq
-_GLOBAL__sub_I_example.cpp:             # @_GLOBAL__sub_I_example.cpp
-        pushq   %rbx
-        leaq    std::__ioinit(%rip), %rbx
-        movq    %rbx, %rdi
-        callq   std::ios_base::Init::Init()@PLT
-        movq    std::ios_base::Init::~Init()@GOTPCREL(%rip), %rdi
-        leaq    __dso_handle(%rip), %rdx
-        movq    %rbx, %rsi
-        popq    %rbx
-        jmp     __cxa_atexit@PLT                # TAILCALL
-`
-
-const stepSize = Facet.define({
-    combine: (values) => (values.length ? Math.min(...values) : 2),
-});
-const zebraStripes = ({ step }) => {
-    return [stepSize.of(5), showStripes];
-};
+const colorOf = (v) => `hsla(${(v * 69) % 360}, 85%, 50%, ${15}%)`;
 const stripe = (line) =>
     Decoration.line({
         attributes: {
-            style: `background-color: rgba(255, 255, 255, ${((23 * line) % 256) / 512})`,
+            style: `background-color: ${colorOf(line)}`,
         },
     });
 
-const stripeDeco = (view) => {
-    let builder = new RangeSetBuilder();
-    for (let { from, to } of view.visibleRanges) {
-        for (let pos = from; pos <= to;) {
-            let line = view.state.doc.lineAt(pos);
-            if ([1, 2, 8, 9].includes(line.number))
-                builder.add(line.from, line.from, stripe(line.number));
+const visibleLines = (view) =>
+    view.visibleRanges.flatMap(({ from, to }) => {
+        const lines = [];
+        for (let pos = from; pos <= to; ) {
+            const line = view.state.doc.lineAt(pos);
+            lines.push(line);
             pos = line.to + 1;
         }
-    }
+        return lines;
+    });
+
+const stripeDeco = (view, hlgs) => {
+    const builder = new RangeSetBuilder();
+    visibleLines(view)
+        .filter((line) => line.number in hlgs)
+        .map((line) => [line, stripe(hlgs[line.number])])
+        .forEach(([line, decoration]) =>
+            builder.add(line.from, line.from, decoration),
+        );
     return builder.finish();
 };
-
-const showStripes = ViewPlugin.fromClass(
-    class {
-        constructor(view) {
-            this.decorations = stripeDeco(view);
-        }
-
-        update(update) {
-            if (update.docChanged || update.viewportChanged)
-                this.decorations = stripeDeco(update.view);
-        }
-    },
-    {
-        decorations: (v) => {
-            return v.decorations;
+const showStripes = (hlgs) =>
+    ViewPlugin.fromClass(
+        class {
+            constructor(view) {
+                this.decorations = stripeDeco(view, hlgs);
+            }
+            update(update) {
+                if (!update.docChanged && !update.viewportChanged) return;
+                this.decorations = stripeDeco(update.view, hlgs);
+            }
         },
-    },
-);
+        {
+            decorations: (v) => {
+                return v.decorations;
+            },
+        },
+    );
 
-const EditorStateContext = createContext(null);
-
-const Fulgurite = () => {
-    const state = useContext(EditorStateContext);
-    const ref = useRef(null);
-
-    useEffect(() => {
-        console.log("once?");
-        const editor = new EditorView({
-            state: state,
-            parent: ref.current,
-        });
-        return () => {
-            editor.destroy();
-        };
-    });
-    return <div className="h-full" ref={ref}></div>;
-};
-
-const FulguriteBro = () => {
-    const codeRef = useRef(null);
-    const asmRef = useRef(null);
-    if (!codeRef.current) {
-        codeRef.current = EditorState.create({
-            doc: cppCode,
-            extensions: [
-                basicSetup,
-                dracula,
-                zebraStripes({ step: 2 }),
-                cpp(),
-            ],
-        });
-    }
-    if (!asmRef.current) {
-        asmRef.current = EditorState.create({
-            doc: asmCode,
-            extensions: [
-                basicSetup,
-                dracula,
-                zebraStripes({ step: 2 }),
-                StreamLanguage.define(gas),
-            ],
-        });
-    }
-
+const Blox = ({ doc, lang, hlgs, onChange, readonly, rolename }) => {
     return (
-        <div className="grid grid-cols-2 place-items-stretch">
-            < EditorStateContext.Provider value={codeRef.current} >
-                <div className="bg-blue-500">
-                    <Fulgurite />
-                </div>
-            </EditorStateContext.Provider >
-            <EditorStateContext.Provider value={asmRef.current}>
-                <Fulgurite />
-            </EditorStateContext.Provider>
-        </div >
+        <CodeMirror
+            value={doc}
+            onChange={onChange}
+            theme={dracula}
+            height={"400px"}
+            extensions={[
+                showStripes(hlgs ?? {}),
+                lang == "cpp" ? cpp() : StreamLanguage.define(gas),
+                EditorView.contentAttributes.of({ contenteditable: !readonly }),
+            ]}
+        />
     );
 };
 
-export default FulguriteBro;
+const godbolt = axios.create({
+    baseURL: "https://godbolt.org/api",
+    headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json ",
+    },
+});
+
+const Fulgurite = () => {
+    const lang = "c++";
+    const compiler = "clang1500";
+    const [compileArgs, _setCompileArgs] = useState("-std=c++20 -O1");
+    const [code, setCode] = useLocalstorageState(
+        "flare:fulgurite:main",
+        cppCode,
+    );
+    const setCodeDebounced = useDebounce(setCode, 1000);
+    // const data = { asm: [] };
+    const { data } = useQuery(["compile", code], async () => {
+        const r = await godbolt.post(`/compiler/${compiler}/compile`, {
+            source: code,
+            compiler: compiler,
+            options: {
+                userArguments: compileArgs,
+                filters: {
+                    binary: false,
+                    execute: true,
+                    intel: false,
+                    demangle: true,
+                    labels: true,
+                    libraryCode: false,
+                    directives: true,
+                    commentOnly: true,
+                    trim: false,
+                },
+                tools: [],
+                libraries: [],
+            },
+            lang: lang,
+            files: [],
+            bypassCache: false,
+            allowStoreCodeDebug: true,
+        });
+        return r.data;
+    });
+
+    const asmsrc = (data?.asm ?? [])
+        .map(({ source }, i) => [i + 1, source?.file, source?.line])
+        .filter(([_, file, line]) => file === null && !!line)
+        .map(([asmLine, _, srcLine]) => [asmLine, srcLine]);
+    const togrp = _.fromPairs(
+        _.sortedUniq(asmsrc.map(([_asmLine, srcLine]) => srcLine)).map(
+            (srcLine, i) => [srcLine, i],
+        ),
+    );
+    return (
+        <div className={"grid grid-cols-1 md:grid-cols-2 place-items-stretch"}>
+            <Blox
+                doc={code}
+                onChange={setCodeDebounced}
+                hlgs={togrp}
+                lang="cpp"
+                rolename="cpp"
+            />
+            <Blox
+                doc={
+                    data?.asm?.map((line) => line.text).join("\n") ??
+                    "compiling"
+                }
+                lang="asm"
+                hlgs={_.fromPairs(
+                    asmsrc.map(([asmLine, srcLine]) => [
+                        asmLine,
+                        togrp[srcLine],
+                    ]),
+                )}
+                rolename="asm"
+                readonly
+            />
+        </div>
+    );
+};
+
+const FulguriteSis = () => {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <Fulgurite />
+            <div className="flex bg-[#282a36] my-12">
+                {_.range(20).map((v) => (
+                    <div
+                        key={v}
+                        className="w-8 h-8"
+                        style={{ backgroundColor: colorOf(v) }}
+                    ></div>
+                ))}
+            </div>
+        </QueryClientProvider>
+    );
+};
+
+export default FulguriteSis;
