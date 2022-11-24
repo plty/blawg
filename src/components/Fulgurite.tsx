@@ -66,7 +66,6 @@ const Fulgurite = ({
     );
 };
 
-
 export const FulguriteIsland = ({
     hint,
 }: {

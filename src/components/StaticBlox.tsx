@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from "react";
 
+import { Lang, parser } from "$components/editor/lang-support";
+import { usePromise } from "$hooks/usePromise";
+import { zip } from "$utils/fn";
 import type { HighlightStyle, Language } from "@codemirror/language";
 import {
     Extension,
@@ -11,10 +14,6 @@ import {
 import { Decoration } from "@codemirror/view";
 import { highlightTree } from "@lezer/highlight";
 import _range from "lodash/range";
-
-import { usePromise } from "../hooks/usePromise";
-import { zip } from "../utils/fn";
-import { Lang, parser } from "./editor/lang-support";
 
 const decorations = (
     lang: Language,
@@ -181,4 +180,3 @@ export const StaticBlox = ({
         </div>
     );
 };
-

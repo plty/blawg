@@ -24,7 +24,10 @@ export const highlighter = {
 };
 
 export const parser = {
-    asm: async () => StreamLanguage.define((await import("@codemirror/legacy-modes/mode/gas")).gas),
+    asm: async () =>
+        StreamLanguage.define(
+            (await import("@codemirror/legacy-modes/mode/gas")).gas,
+        ),
     cpp: async () =>
         (await import("@codemirror/lang-cpp")).cppLanguage as Language,
     jsx: async () =>

@@ -1,18 +1,11 @@
 ---
-import {
-    oneDarkHighlightStyle,
-    oneDarkTheme,
-} from "@codemirror/theme-one-dark";
+import { FulguriteIsland } from "$components/Fulgurite.tsx";
+import { bloxCSS } from "$components/editor/cssgen.ts";
+import BaseLayout from "$layouts/BaseLayout.astro";
+import { cppCode, notCppCode } from "$utils/constants.ts";
+import { compile } from "$utils/godbolt.ts";
 
-import { FulguriteIsland } from "../components/Fulgurite.tsx";
-import { cssgen } from "../components/editor/cssgen.ts";
-import { baseTheme } from "../components/editor/baseEditorStyles.ts";
-import Layout from "../layouts/Layout.astro";
-import { cppCode, notCppCode } from "../utils/constants.ts";
-import { compile } from "../utils/godbolt.ts";
-
-const editorCSS = baseTheme.getRules();
-const highlightCSS = cssgen(oneDarkHighlightStyle, oneDarkTheme);
+const { editorCSS, highlightCSS } = bloxCSS;
 
 const [compiledCpp, compiledNotCpp] = await Promise.all(
     [cppCode, notCppCode].map((code) => {
@@ -26,12 +19,12 @@ const [compiledCpp, compiledNotCpp] = await Promise.all(
 const hint = { [cppCode]: compiledCpp, [notCppCode]: compiledNotCpp };
 ---
 
-<Layout title="Fulgurite | bigpp.dev">
+<BaseLayout title="Fulgurite | bigpp.dev">
     <style is:inline set:html={editorCSS}></style>
-    <style is:inline set:html={highlightCSS}></style>
+    <style set:html={highlightCSS}></style>
     <main class="container mx-auto px-4 pt-6">
         <h1 class="text-4xl font-bold">Fulgurite</h1>
         when god-"bolt" meet "sand"-pack
         <FulguriteIsland hint={hint} client:visible />
     </main>
-</Layout>
+</BaseLayout>

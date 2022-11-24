@@ -18,7 +18,7 @@ import { dracula } from "./editor/theme";
 const visibleLines = (view: EditorView) =>
     view.visibleRanges.flatMap(({ from, to }): Line[] => {
         const lines = [];
-        for (let pos = from; pos <= to;) {
+        for (let pos = from; pos <= to; ) {
             const line = view.state.doc.lineAt(pos);
             lines.push(line);
             pos = line.to + 1;
@@ -37,7 +37,7 @@ const showStripes = (lineGroup: { [line: number]: number }): Extension => {
         const decorationOf = (line: number): Decoration =>
             Decoration.line({
                 attributes: {
-                    style: `background-color: ${colorOf(line, 15)}`
+                    style: `background-color: ${colorOf(line, 15)}`,
                 },
             });
 

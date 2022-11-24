@@ -1,5 +1,5 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import BaseLayout from "$layouts/BaseLayout.astro";
 
 type Frontmatter = {
     unique_id: string;
@@ -14,12 +14,12 @@ type Frontmatter = {
 const posts = await Astro.glob<Frontmatter>("./posts/*.md{,x}");
 ---
 
-<Layout title="Home | bigpp.dev">
+<BaseLayout title="Home | bigpp.dev">
     <main class="container max-w-4xl mx-auto px-4 pt-6">
         <h1 class="text-4xl font-bold">Recent Posts</h1>
         <ul class="space-y-4 mt-6">
             {
-                [...posts, ...posts]
+                posts
                     .filter((post) => !post.frontmatter.draft)
                     .map((post, i) => (
                         <>
@@ -40,4 +40,4 @@ const posts = await Astro.glob<Frontmatter>("./posts/*.md{,x}");
             }
         </ul>
     </main>
-</Layout>
+</BaseLayout>

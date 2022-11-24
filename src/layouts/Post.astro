@@ -1,22 +1,22 @@
 ---
-import Layout from "./Layout.astro";
-
+import { bloxCSS } from "$components/editor/cssgen.ts";
+import BaseLayout from "$layouts/BaseLayout.astro";
 import {
     oneDarkHighlightStyle,
     oneDarkTheme,
 } from "@codemirror/theme-one-dark";
-import { cssgen } from "../components/editor/cssgen.ts";
-import { baseTheme } from "../components/editor/baseEditorStyles.ts";
-const editorCSS = baseTheme.getRules();
-const highlightCSS = cssgen(oneDarkHighlightStyle, oneDarkTheme);
+
+const { editorCSS, highlightCSS } = bloxCSS;
 
 const { frontmatter } = Astro.props;
 ---
 
-<Layout title={`${frontmatter.title} | biggp.dev`}>
+<BaseLayout title={`${frontmatter.title} | biggp.dev`}>
     <style is:inline set:html={editorCSS}></style>
-    <style is:inline set:html={highlightCSS}></style>
-    <main class="container max-w-4xl mx-auto prose prose-invert px-4 pt-6">
+    <style set:html={highlightCSS}></style>
+    <main
+        class="container max-w-4xl mx-auto prose prose-invert md:prose-lg prose-p:text-justify prose-p:break-words prose-p:hyphens-auto px-4 pt-6"
+    >
         <slot />
     </main>
-</Layout>
+</BaseLayout>
