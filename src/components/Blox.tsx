@@ -10,17 +10,22 @@ import {
 import { usePromise } from "../hooks/usePromise";
 import { StaticBlox } from "./StaticBlox";
 
-export type HLGS = { [line: number]: number };
 type Lang = "rust" | "cpp" | "asm";
 type BloxProp = {
     code: string;
     lang: Lang;
-    hlgs: HLGS;
+    lineGroup: { [line: number]: number };
     onChange?: (_: string) => void;
     readonly?: boolean;
 };
 
-const Blox: React.FC<BloxProp> = ({ code, lang, hlgs, onChange, readonly }) => {
+const Blox: React.FC<BloxProp> = ({
+    code,
+    lang,
+    lineGroup,
+    onChange,
+    readonly,
+}) => {
     const { state, value: DynamicBlox } = usePromise(
         async () => (await import("./DynamicBlox")).DynamicBlox,
         [],
@@ -32,7 +37,7 @@ const Blox: React.FC<BloxProp> = ({ code, lang, hlgs, onChange, readonly }) => {
                 <DynamicBlox
                     code={code}
                     lang={lang}
-                    hlgs={hlgs}
+                    lineGroup={lineGroup}
                     onChange={onChange}
                     readonly={readonly}
                 />
@@ -41,7 +46,7 @@ const Blox: React.FC<BloxProp> = ({ code, lang, hlgs, onChange, readonly }) => {
                 <StaticBlox
                     code={code}
                     lang={lang}
-                    lineGroup={hlgs}
+                    lineGroup={lineGroup}
                     highlightStyle={oneDarkHighlightStyle}
                 />
             )}

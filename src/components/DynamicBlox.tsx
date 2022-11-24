@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
 
-import { StreamLanguage } from "@codemirror/language";
 import { Extension, Line, RangeSetBuilder } from "@codemirror/state";
-import { oneDark } from "@codemirror/theme-one-dark";
+import { oneDark, oneDarkTheme } from "@codemirror/theme-one-dark";
 import {
     Decoration,
     DecorationSet,
@@ -13,12 +12,13 @@ import {
 import { basicSetup } from "codemirror";
 
 import { usePromise } from "../hooks/usePromise";
-import type { HLGS } from "./Blox";
+import { Lang, highlighter } from "./editor/lang-support";
+import { dracula } from "./editor/theme";
 
 const visibleLines = (view: EditorView) =>
     view.visibleRanges.flatMap(({ from, to }): Line[] => {
         const lines = [];
-        for (let pos = from; pos <= to; ) {
+        for (let pos = from; pos <= to;) {
             const line = view.state.doc.lineAt(pos);
             lines.push(line);
             pos = line.to + 1;
@@ -26,31 +26,26 @@ const visibleLines = (view: EditorView) =>
         return lines;
     });
 
-const showStripes = (hlgs: HLGS): Extension => {
-    const decorate = (view: EditorView, hlgs: HLGS) => {
+const showStripes = (lineGroup: { [line: number]: number }): Extension => {
+    const decorate = (
+        view: EditorView,
+        lineGroup: { [line: number]: number },
+    ) => {
         const colorOf = (v: number, al: number) =>
-            `hsla(${(v * 37) % 360}, 85%, 50%, ${al}%)`;
+            `hsla(${(v * 37) % 360}, 50%, 50%, ${al}%)`;
 
         const decorationOf = (line: number): Decoration =>
             Decoration.line({
                 attributes: {
-                    style: `background-color: ${colorOf(line, 15)}`,
-                    onmouseover: `this.style.backgroundColor="${colorOf(
-                        line,
-                        50,
-                    )}"`,
-                    onmouseout: `this.style.backgroundColor="${colorOf(
-                        line,
-                        15,
-                    )}"`,
+                    style: `background-color: ${colorOf(line, 15)}`
                 },
             });
 
         return visibleLines(view)
-            .filter((line) => line.number in hlgs)
+            .filter((line) => line.number in lineGroup)
             .map((line: Line): [Line, Decoration] => [
                 line,
-                decorationOf(hlgs[line.number]),
+                decorationOf(lineGroup[line.number]),
             ])
             .reduce((b, [l, d]) => {
                 b.add(l.from, l.from, d);
@@ -63,11 +58,11 @@ const showStripes = (hlgs: HLGS): Extension => {
         class {
             decorations: DecorationSet;
             constructor(view: EditorView) {
-                this.decorations = decorate(view, hlgs);
+                this.decorations = decorate(view, lineGroup);
             }
             update(update: ViewUpdate) {
                 if (!update.docChanged && !update.viewportChanged) return;
-                this.decorations = decorate(update.view, hlgs);
+                this.decorations = decorate(update.view, lineGroup);
             }
         },
         {
@@ -78,34 +73,10 @@ const showStripes = (hlgs: HLGS): Extension => {
     );
 };
 
-//            value={doc}
-//            onChange={onChange}
-//            theme={dracula}
-//            height={"400px"}
-//            extensions={[
-//                showStripes(hlgs),
-//                lang == "cpp" ? cpp() : StreamLanguage.define(gas),
-//                EditorView.contentAttributes.of({
-//                    contenteditable: `${!readonly}`,
-//                }),
-//            ]}
-
-export type Lang = "rust" | "cpp" | "asm";
-
-const highlighter = {
-    rust: async () =>
-        (await import("@codemirror/lang-rust")).rust() as Extension,
-    cpp: async () => (await import("@codemirror/lang-cpp")).cpp() as Extension,
-    asm: async () =>
-        StreamLanguage.define(
-            (await import("@codemirror/legacy-modes/mode/gas")).gas,
-        ) as Extension,
-};
-
 type BloxProp = {
     code: string;
     lang: Lang;
-    hlgs: HLGS;
+    lineGroup: { [line: number]: number };
     onChange?: (_: string) => void;
     readonly?: boolean;
 };
@@ -113,7 +84,7 @@ type BloxProp = {
 export const DynamicBlox: React.FC<BloxProp> = ({
     code,
     lang,
-    hlgs,
+    lineGroup,
     onChange,
     readonly,
 }) => {
@@ -128,19 +99,18 @@ export const DynamicBlox: React.FC<BloxProp> = ({
             doc: code,
             extensions: [
                 basicSetup,
-                showStripes(hlgs),
+                showStripes(lineGroup),
                 oneDark,
                 ...(state === "resolve" ? [langExt] : []),
                 EditorView.contentAttributes.of({
                     contenteditable: `${!readonly}`,
                 }),
             ],
-
             parent: ref.current!,
         });
         return () => editorRef.current!.destroy();
     });
-    return <div className="h-[400px] overflow-y-auto" ref={ref}></div>;
+    return <div className="max-h-[400px] overflow-y-auto" ref={ref}></div>;
 };
 
 export default DynamicBlox;

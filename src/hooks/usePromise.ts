@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { DependencyList, useEffect, useState } from "react";
 
 type Pending = {
     state: "pending";
@@ -40,8 +40,30 @@ export const usePromise = function <T>(
     useEffect(() => {
         let stale = false;
         f()
-            .then((v) => stale && setState(resolve(v)))
-            .catch((e) => stale && setState(reject(e)));
+            .then((v) => !stale && setState(resolve(v)))
+            .catch((e) => !stale && setState(reject(e)));
+
+        return () => {
+            stale = true;
+            setState(pending());
+        };
+    }, deps);
+    return state;
+};
+
+export const useHintedPromise = function <T, D extends DependencyList>(
+    hint: Map<D, T>,
+    f: () => Promise<T>,
+    deps: D,
+): UsePromiseResponse<T> {
+    const [state, setState] = useState<UsePromiseResponse<T>>(
+        hint.has(deps) ? resolve(hint.get(deps)!) : pending(),
+    );
+    useEffect(() => {
+        let stale = false;
+        f()
+            .then((v) => !stale && setState(resolve(v)))
+            .catch((e) => !stale && setState(reject(e)));
 
         return () => {
             stale = true;

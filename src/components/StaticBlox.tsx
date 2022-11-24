@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-import { HighlightStyle, Language, StreamLanguage } from "@codemirror/language";
+import type { HighlightStyle, Language } from "@codemirror/language";
 import {
     Extension,
     Line,
@@ -14,8 +14,7 @@ import _range from "lodash/range";
 
 import { usePromise } from "../hooks/usePromise";
 import { zip } from "../utils/fn";
-import type { HLGS } from "./Blox";
-import type { Lang } from "./DynamicBlox";
+import { Lang, parser } from "./editor/lang-support";
 
 const decorations = (
     lang: Language,
@@ -28,17 +27,6 @@ const decorations = (
         builder.add(from, to, Decoration.mark({ class: style }));
     });
     return builder.finish();
-};
-
-const parser = {
-    rust: async () =>
-        (await import("@codemirror/lang-rust")).rustLanguage as Language,
-    cpp: async () =>
-        (await import("@codemirror/lang-cpp")).cppLanguage as Language,
-    asm: async () =>
-        StreamLanguage.define(
-            (await import("@codemirror/legacy-modes/mode/gas")).gas,
-        ),
 };
 
 type Decoz = { tag: string; cls: string; range: { s: number; e: number } };
@@ -127,7 +115,7 @@ type StaticBloxProp = {
     code: string;
     lang: Lang;
     highlightStyle: HighlightStyle;
-    lineGroup: HLGS;
+    lineGroup: { [line: number]: number };
 };
 export const StaticBlox = ({
     code,
@@ -141,7 +129,7 @@ export const StaticBlox = ({
         [lang],
     );
     const colorOf = (v: number, al: number) =>
-        `hsla(${(v * 37) % 360}, 85%, 50%, ${al}%)`;
+        `hsla(${(v * 37) % 360}, 50%, 50%, ${al}%)`;
     const decors = useMemo(
         () =>
             state === "resolve"
@@ -151,7 +139,7 @@ export const StaticBlox = ({
     );
     const lines = Text.of(code.split("\n"));
     return (
-        <div className="blox">
+        <div className="blox max-h-[400px] overflow-y-auto">
             <div className="cm-editor gutter ͼo">
                 <div className="cm-scroller">
                     <div className="cm-gutters">
@@ -194,19 +182,3 @@ export const StaticBlox = ({
     );
 };
 
-type Theme = [{ value: string }, ...{ value?: { getRules?(): string } }[]];
-
-export const genCSSRules = (
-    highlightStyle: HighlightStyle,
-    theme: Extension,
-) => {
-    const [_head, ...rest] = theme as unknown as Theme;
-    return {
-        highlightRules: [
-            ...rest
-                .filter((v) => v.value?.getRules?.())
-                .map((v) => v.value!.getRules!()),
-            highlightStyle.module!.getRules(),
-        ],
-    };
-};

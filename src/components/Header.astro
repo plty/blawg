@@ -18,12 +18,12 @@ const menus = [
                 </div>
                 <div class="hidden md:block">
                     <div x-cloak class="ml-10 flex items-baseline space-x-4">
-                        <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+                        <!-- Current: "bg-zinc-900 text-white", Default: "text-gray-300 hover:bg-zinc-700 hover:text-white" -->
                         {
                             menus.map((menu) => (
                                 <a
                                     href={menu.path}
-                                    class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+                                    class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-zinc-700 hover:text-white"
                                 >
                                     {menu.name}
                                 </a>
@@ -36,7 +36,7 @@ const menus = [
                 <!-- Mobile menu button -->
                 <button
                     type="button"
-                    class="inline-flex items-center justify-center rounded-md bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                    class="inline-flex items-center justify-center rounded-md bg-zinc-800 p-2 text-gray-400 hover:bg-zinc-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                     aria-controls="mobile-menu"
                     aria-expanded="false"
                 >
@@ -85,12 +85,12 @@ const menus = [
     <!-- Mobile menu, show/hide based on menu state. -->
     <div class="md:hidden" id="mobile-menu" x-show="disclosed" x-cloak>
         <div class="space-y-1 px-2 pt-2 pb-3 sm:px-3">
-            <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
+            <!-- Current: "bg-zinc-900 text-white", Default: "text-gray-300 hover:bg-zinc-700 hover:text-white" -->
             {
                 menus.map((menu) => (
                     <a
                         href={menu.path}
-                        class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+                        class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-zinc-700 hover:text-white"
                     >
                         {menu.name}
                     </a>
