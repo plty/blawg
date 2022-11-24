@@ -3,8 +3,8 @@ import rss from "@astrojs/rss";
 const posts = Object.values(import.meta.glob("./**/*.md", { eager: true }));
 export const get = () =>
     rss({
-        title: "Big Peepee Developer",
-        description: "bigpp.dev",
+        title: "Yoten Developer",
+        description: "yoten.dev",
         site: import.meta.env.SITE,
         items: [...posts].map((post) => ({
             link: post.url,

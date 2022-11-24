@@ -20,8 +20,8 @@
         "@astrojs/prism": "^1.0.2",
         "@astrojs/react": "^1.2.2",
         "@astrojs/rss": "^1.0.3",
-        "@astrojs/sitemap": "^1.0.0",
         "@astrojs/tailwind": "^2.1.2",
+        "@astrojs/vercel": "^2.3.4",
         "@codemirror/commands": "^6.1.2",
         "@codemirror/lang-cpp": "^6.0.2",
         "@codemirror/lang-javascript": "^6.1.1",
@@ -50,6 +50,7 @@
         "react-query": "^3.39.2",
         "rollup": "^3.4.0",
         "rooks": "^7.4.2",
+        "sharp": "^0.31.2",
         "style-mod": "^4.0.0"
     },
     "devDependencies": {
