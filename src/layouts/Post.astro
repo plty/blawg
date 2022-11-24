@@ -1,12 +1,11 @@
 ---
-import Header from "../components/Header.astro";
 import Layout from "./Layout.astro";
 
 const { frontmatter } = Astro.props;
 ---
 
 <Layout title={`${frontmatter.title} | biggp.dev`}>
-    <main class="container max-w-4xl mx-auto prose px-4 pt-6">
+    <main class="container max-w-4xl mx-auto prose prose-invert px-4 pt-6">
         <slot />
     </main>
 </Layout>

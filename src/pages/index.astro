@@ -1,37 +1,45 @@
 ---
-import _ from "lodash";
-
 import Layout from "../layouts/Layout.astro";
 
-interface Frontmatter {
+type Frontmatter = {
     unique_id: string;
     short_id: string;
     title: string;
     description: string;
     pub_date: string;
     tags: string[];
-}
+    draft?: boolean;
+};
 
-const posts = await Astro.glob<FrontMatter>("./posts/*.md");
+const posts = await Astro.glob<Frontmatter>("./posts/*.md");
 ---
 
 <Layout title="Home | bigpp.dev">
     <main class="container max-w-4xl mx-auto px-4 pt-6">
+        <p class="drac-text drac-text-black">Hello Vampire</p>
+        <!-- <div class="drac-box drac-card drac-bg-purple drac-p-sm"> -->
+        <!-- <span class="drac-text drac-line-height drac-text-black">Dracula</span> -->
+        <!-- </div> -->
         <h1 class="text-4xl font-bold">Recent Posts</h1>
         <ul class="space-y-4 mt-6">
             {
-                posts
+                [...posts, ...posts]
                     .filter((post) => !post.frontmatter.draft)
-                    .map((post) => (
-                        <li>
-                            <h2 class="text-3xl">{post.frontmatter.title}</h2>
-                            <p class="line-clamp-3">
-                                {post.frontmatter.description}
-                            </p>
-                            <a href={post.url} class="font-bold">
-                                Read more
-                            </a>
-                        </li>
+                    .map((post, i) => (
+                        <>
+                            {i !== 0 && <hr class="drac-divider" />}
+                            <li>
+                                <h2 class="text-3xl">
+                                    {post.frontmatter.title}
+                                </h2>
+                                <p class="line-clamp-3">
+                                    {post.frontmatter.description}
+                                </p>
+                                <a href={post.url} class="font-bold">
+                                    Read more
+                                </a>
+                            </li>
+                        </>
                     ))
             }
         </ul>
