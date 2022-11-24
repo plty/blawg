@@ -14,7 +14,6 @@ import { usePromise } from "../hooks/usePromise";
 import Blox from "./Blox";
 import { StaticBlox, genCSSRules } from "./StaticBlox";
 import TopLevelProvider from "./TopLevelProvider";
-import { baseTheme } from "./editor/baseEditorStyles";
 
 const cppCode = `\
 #include<iostream>
@@ -205,22 +204,17 @@ const Fulgurite = ({
 
     const { highlightRules } = genCSSRules(oneDarkHighlightStyle, oneDarkTheme);
 
-    /*  */
     return (
         <div
             className={
-                "grid grid-cols-1 space-y-2 md:grid-cols-2 md:space-y-0 place-items-stretch"
+                "grid grid-cols-1 space-y-2 lg:grid-cols-2 md:space-y-0 place-items-stretch"
             }
         >
             <style
-                dangerouslySetInnerHTML={{ __html: baseTheme.getRules() }}
-            ></style>
-
-            {/* <style
                 dangerouslySetInnerHTML={{
                     __html: highlightRules.join("\n"),
                 }}
-            ></style> */}
+            ></style>
             <Blox
                 lang="cpp"
                 code={code}

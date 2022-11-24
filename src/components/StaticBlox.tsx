@@ -1,13 +1,19 @@
 import React, { useMemo, useState } from "react";
 
 import { HighlightStyle, Language, StreamLanguage } from "@codemirror/language";
-import { Extension, Line, RangeSetBuilder, Text } from "@codemirror/state";
-import { Decoration, lineNumbers } from "@codemirror/view";
+import {
+    Extension,
+    Line,
+    RangeSet,
+    RangeSetBuilder,
+    Text,
+} from "@codemirror/state";
+import { Decoration } from "@codemirror/view";
 import { highlightTree } from "@lezer/highlight";
 import _range from "lodash/range";
-import _zip from "lodash/zip";
 
 import { usePromise } from "../hooks/usePromise";
+import { zip } from "../utils/fn";
 import type { HLGS } from "./Blox";
 import type { Lang } from "./DynamicBlox";
 
@@ -15,18 +21,13 @@ const decorations = (
     lang: Language,
     highlightStyle: HighlightStyle,
     code: string,
-) => {
+): RangeSet<Decoration> => {
     const tree = lang.parser.parse(code);
     const builder = new RangeSetBuilder<Decoration>();
     highlightTree(tree, highlightStyle, (from, to, style) => {
         builder.add(from, to, Decoration.mark({ class: style }));
     });
     return builder.finish();
-};
-
-const zip = function <T1, T2>(a: T1[], b: T2[]): [T1, T2][] {
-    const len = Math.min(a.length, b.length);
-    return _zip(a.slice(0, len), b.slice(0, len)) as [T1, T2][];
 };
 
 const parser = {
@@ -38,6 +39,88 @@ const parser = {
         StreamLanguage.define(
             (await import("@codemirror/legacy-modes/mode/gas")).gas,
         ),
+};
+
+type Decoz = { tag: string; cls: string; range: { s: number; e: number } };
+const marks = (decors: RangeSet<Decoration>, meta: Line): Decoz[] => {
+    type DecorValue = {
+        tagName: string;
+        class: string;
+    };
+
+    const g = function* (line: Line): Generator<Decoz> {
+        for (
+            let curs = decors.iter(line.from);
+            curs.value && curs.from < line.to;
+            curs.next()
+        ) {
+            const decoration = curs.value as unknown as DecorValue;
+            yield {
+                tag: decoration.tagName,
+                cls: decoration.class,
+                range: {
+                    s: Math.max(curs.from, line.from) - line.from,
+                    e: Math.min(curs.to, line.to) - line.from,
+                },
+            };
+        }
+    };
+
+    return [...g(meta)];
+};
+
+const CodeLine = ({
+    line,
+    marks,
+    bg,
+    onClick,
+}: {
+    line: string;
+    marks: Decoz[];
+    bg: string;
+    onClick: () => void;
+}) => {
+    if (marks.length == 0) {
+        return (
+            <div
+                className="cm-line transition-colors duration-300"
+                style={bg ? { backgroundColor: bg } : {}}
+                onClick={onClick}
+            >
+                {/* TODO: use tag */}
+                <span>{line}</span>
+                <br />
+            </div>
+        );
+    }
+
+    const [f, l] = [marks[0], marks[marks.length - 1]];
+    return (
+        <div
+            className="cm-line transition-colors duration-300"
+            style={bg ? { backgroundColor: bg } : {}}
+            onClick={onClick}
+        >
+            <span key={"start"}>{line.slice(0, f.range.s)}</span>
+            <span className={f.cls}>{line.slice(f.range.s, f.range.e)}</span>
+            {zip(marks, marks.slice(1)).map(([prev, next], i) => {
+                const {
+                    range: { s: _ps, e: pe },
+                } = prev;
+                const {
+                    range: { s: ns, e: ne },
+                } = next;
+                return (
+                    <React.Fragment key={i}>
+                        <span>{line.slice(pe, ns)}</span>
+                        <span className={next.cls}>{line.slice(ns, ne)}</span>
+                    </React.Fragment>
+                );
+            })}
+            <span>{line.slice(l.range.e)}</span>
+            <br />
+        </div>
+    );
 };
 
 type StaticBloxProp = {
@@ -52,123 +135,24 @@ export const StaticBlox = ({
     highlightStyle,
     lineGroup: lg,
 }: StaticBloxProp) => {
-    type Decoz = { tag: string; cls: string; range: { s: number; e: number } };
     const [hlGroup, setHlGroup] = useState(-1);
-
     const { state, value: langParser } = usePromise(
         () => parser[lang](),
         [lang],
     );
-
-    const decors =
-        state === "resolve"
-            ? decorations(langParser, highlightStyle, code)
-            : new RangeSetBuilder<Decoration>().finish();
-    const lines = Text.of(code.split("\n"));
-    const marks = function* (line: Line): Generator<Decoz> {
-        type DecorValue = {
-            tagName: string;
-            class: string;
-        };
-
-        for (
-            let curs = decors.iter(line.from);
-            curs.value && curs.from < line.to;
-            curs.next()
-        ) {
-            const decoration = curs.value as unknown as DecorValue;
-            yield {
-                tag: decoration.tagName,
-                cls: decoration.class,
-                range: {
-                    s: Math.max(curs.from, line.from),
-                    e: Math.min(curs.to, line.to),
-                },
-            };
-        }
-    };
-
     const colorOf = (v: number, al: number) =>
         `hsla(${(v * 37) % 360}, 85%, 50%, ${al}%)`;
-
-    const CodeLine = ({ line }: { line: Line }) => {
-        const ms = [...marks(line)];
-        if (ms.length == 0) {
-            return (
-                <div
-                    className="cm-line transition duration-500"
-                    style={
-                        line.number in lg
-                            ? {
-                                  backgroundColor: colorOf(
-                                      lg[line.number],
-                                      lg[line.number] === hlGroup ? 35 : 15,
-                                  ),
-                              }
-                            : {}
-                    }
-                    onMouseEnter={() => setHlGroup(lg[line.number])}
-                    onMouseLeave={() => setHlGroup(-1)}
-                >
-                    {/* TODO: use tag */}
-                    <span>{lines.sliceString(line.from, line.to)}</span>
-                    <br />
-                </div>
-            );
-        }
-
-        const [f, l] = [ms[0], ms[ms.length - 1]];
-        return (
-            <div
-                className="cm-line transition duration-500"
-                style={
-                    line.number in lg
-                        ? {
-                              backgroundColor: colorOf(
-                                  lg[line.number],
-                                  lg[line.number] === hlGroup ? 35 : 15,
-                              ),
-                          }
-                        : {}
-                }
-                onMouseEnter={() => setHlGroup(lg[line.number])}
-                onMouseLeave={() => setHlGroup(-1)}
-            >
-                <span key={"start"}>
-                    {lines.sliceString(line.from, f.range.s)}
-                </span>
-                <span className={ms[0].cls}>
-                    {lines.sliceString(f.range.s, f.range.e)}
-                </span>
-                {zip(ms, ms.slice(1)).map(([prev, next], i) => {
-                    const {
-                        range: { s: _ps, e: pe },
-                    } = prev;
-                    const {
-                        range: { s: ns, e: ne },
-                    } = next;
-                    return (
-                        <React.Fragment key={i}>
-                            <span>{lines.sliceString(pe, ns)}</span>
-                            <span className={next.cls}>
-                                {lines.sliceString(ns, ne)}
-                            </span>
-                        </React.Fragment>
-                    );
-                })}
-                <span>{lines.sliceString(l.range.e, line.to)}</span>
-                <br />
-            </div>
-        );
-    };
-
-    const linez = useMemo(() => {
-        console.log("??");
-        return _range(lines.lines).map((i) => lines.line(i + 1));
-    }, [code]);
+    const decors = useMemo(
+        () =>
+            state === "resolve"
+                ? decorations(langParser, highlightStyle, code)
+                : new RangeSetBuilder<Decoration>().finish(),
+        [langParser, highlightStyle, code],
+    );
+    const lines = Text.of(code.split("\n"));
     return (
         <div className="blox">
-            <div className={"cm-editor gutter ͼo"}>
+            <div className="cm-editor gutter ͼo">
                 <div className="cm-scroller">
                     <div className="cm-gutters">
                         <div className="cm-gutter cm-lineNumbers">
@@ -185,9 +169,24 @@ export const StaticBlox = ({
                         </div>
                     </div>
                     <div key={"content"} className="cm-content">
-                        {linez.map((line) => (
-                            <CodeLine key={line.number} line={line}></CodeLine>
-                        ))}
+                        {_range(lines.lines)
+                            .map((i): [Line, number] => [
+                                lines.line(i + 1),
+                                lg[i + 1],
+                            ])
+                            .map(([line, g]) => (
+                                <CodeLine
+                                    key={line.number}
+                                    line={lines.sliceString(line.from, line.to)}
+                                    marks={marks(decors, line)}
+                                    bg={
+                                        line.number in lg
+                                            ? colorOf(g, g == hlGroup ? 35 : 15)
+                                            : "transparent"
+                                    }
+                                    onClick={() => setHlGroup(g)}
+                                ></CodeLine>
+                            ))}
                     </div>
                 </div>
             </div>
@@ -201,9 +200,8 @@ export const genCSSRules = (
     highlightStyle: HighlightStyle,
     theme: Extension,
 ) => {
-    const [head, ...rest] = theme as unknown as Theme;
+    const [_head, ...rest] = theme as unknown as Theme;
     return {
-        scopeClass: head.value || "",
         highlightRules: [
             ...rest
                 .filter((v) => v.value?.getRules?.())

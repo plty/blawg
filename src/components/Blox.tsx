@@ -8,7 +8,7 @@ import {
 } from "@codemirror/view";
 
 import { usePromise } from "../hooks/usePromise";
-import { StaticBlox, genCSSRules } from "./StaticBlox";
+import { StaticBlox } from "./StaticBlox";
 
 export type HLGS = { [line: number]: number };
 type Lang = "rust" | "cpp" | "asm";

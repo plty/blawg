@@ -6,23 +6,57 @@ short_id: next-level-playground
 
 title: Random Custom Hooks
 description: >
-    Collection of custom hooks that I find useful
+    Collection of custom hooks I find useful
 pub_date: 2022-11-17T00:00:00Z
 tags: ["react"]
 ---
 
-# Random Hooks that I find useful
+# Random Hooks I find useful
 
 ## SSR Safe useLocalStorageState
 
-```tsx
-function useStoredState<T>(key: string, value: T): [T, (v: T) => void] {
-    const [storedState, setStoredState] = useLocalstorageState<T>(key, value);
-    const [state, setState] = useState<T>(value);
-    useEffect(() => {
-        setState(storedState);
-    }, [storedState]);
+```ts
+export const useStoredState = function <T>(
+    key: string,
+    value: T,
+): [T, (v: T) => void] {
+    const [state, setState] = useLocalstorageState<T>(key, value);
+    const ssr = useSSR();
+    return [ssr ? value : state, setState];
+};
+```
 
-    return [state, setStoredState];
-}
+## SSR Check Hack
+
+```ts
+export const useSSR = (): boolean => {
+    const [state, setState] = useState(true);
+    useEffect(() => {
+        setState(false);
+    }, []);
+    return state;
+};
+```
+
+## usePromise with deps
+
+```ts
+export const usePromise = function <T>(
+    promiseFn: () => Promise<T>,
+    deps: unknown[],
+): UsePromiseResponse<T> {
+    const [state, setState] = useState<UsePromiseResponse<T>>(pending());
+    useEffect(() => {
+        let stale = false;
+        promiseFn()
+            .then((v) => !stale && setState(resolve(v)))
+            .catch((e) => !stale && setState(reject(e)));
+
+        return () => {
+            stale = true;
+            setState(pending());
+        };
+    }, deps);
+    return state;
+};
 ```

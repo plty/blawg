@@ -1,6 +1,9 @@
 ---
-import { FulguriteIsland } from "../components/Fulgurite";
+import { FulguriteIsland } from "../components/Fulgurite.tsx";
+import { baseTheme } from "../components/editor/baseEditorStyles.ts";
 import Layout from "../layouts/Layout.astro";
+
+const editorCSS = baseTheme.getRules();
 ---
 
 <Layout title="Fulgurite | bigpp.dev">
@@ -8,5 +11,6 @@ import Layout from "../layouts/Layout.astro";
         <h1 class="text-4xl font-bold">Fulgurite</h1>
         when god-"bolt" meet "sand"-pack
         <FulguriteIsland client:load />
+        <style is:inline set:html={editorCSS}></style>
     </main>
 </Layout>
